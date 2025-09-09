@@ -7,7 +7,7 @@ from app.schemas.user_schemas import (
 )
 from app.utils.security import (
     hash_password, verify_password,
-    hash_pin, verify_pin as verify_pin_util  # 👈 renamed to avoid collision
+    hash_pin, verify_pin as verify_pin_util  
 )
 
 
@@ -50,7 +50,7 @@ async def get_profile(user: dict, db: AsyncSession):
         referred_by_code=record.referred_by_code,
         is_kyc_verified=record.is_kyc_verified,
         balance=str(record.balance),
-        has_pin=bool(record.withdrawal_pin_hash),  # 👈 derive from DB
+        has_pin=bool(record.withdrawal_pin_hash),  
         is2fa_enabled=record.is_2fa_enabled,
         role=record.role,
         status=record.status,
