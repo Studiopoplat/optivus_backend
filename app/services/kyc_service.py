@@ -24,7 +24,7 @@ async def get_status(user, db: AsyncSession) -> KYCStatusResponse:
     record = result.fetchone()
 
     if not record:
-        return KYCStatusResponse(status="not_submitted")  # Default before any submission
+        return KYCStatusResponse(status="not_submitted")  
 
     return KYCStatusResponse(status=record.status)
 
