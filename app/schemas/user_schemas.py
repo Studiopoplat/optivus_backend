@@ -39,8 +39,8 @@ class UserProfileResponse(BaseModel):
     username: str
     first_name: str
     last_name: str
-    referral_code: str                  # the user’s own referral code
-    referred_by_code: Optional[str]     # NEW → referral code of the referrer (e.g., "MASTERKEY")
+    referral_code: str                   
+    referred_by_code: Optional[str]    
     is_kyc_verified: bool
     balance: str
     has_pin: bool
