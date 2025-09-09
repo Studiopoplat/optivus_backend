@@ -11,14 +11,14 @@ class User(BaseModel):
     first_name: str
     last_name: str
     referral_code: str
-    referred_by_code: Optional[str] = None   # changed from UUID → referral_code
+    referred_by_code: Optional[str] = None   
     is_kyc_verified: bool = False
     is_2fa_enabled: bool = False
     has_pin: bool = False
     role: Literal["user", "admin"] = "user"
     status: Literal["active", "frozen"] = "active"
     withdrawal_status: Literal["active", "paused"] = "active"
-    balance: str = "0.00"  # API will always expose balance as string
+    balance: str = "0.00"
     created_at: datetime
     updated_at: datetime
 
@@ -29,8 +29,7 @@ class UserCreate(BaseModel):
     password: str
     first_name: str
     last_name: str
-    referral_code: Optional[str] = None  # referral code used at signup (if any)
-
+    referral_code: Optional[str] = None  
 
 class UserUpdate(BaseModel):
     first_name: Optional[str]
