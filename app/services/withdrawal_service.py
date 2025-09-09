@@ -7,7 +7,7 @@ from typing import List
 
 from app.database import get_db
 from app.schemas.withdrawal_schemas import WithdrawalCreateRequest, WithdrawalResponse
-from app.utils.stripe_handler import create_payout
+from app.utils.stripe_client import create_payout
 
 
 # -----------------------------
@@ -96,7 +96,7 @@ async def approve_withdrawal(withdrawal_id: str, db: AsyncSession):
     # Trigger Stripe payout
     try:
         payout = create_payout(
-            amount=int(float(record.amount) * 100),  # Stripe expects cents
+            amount=int(float(record.amount) * 100),  
             currency="usd",
             destination=record.destination_address,
         )
