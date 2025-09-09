@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 
 
@@ -9,6 +9,19 @@ from typing import Optional
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+
+
+class InitiateRegistrationRequest(BaseModel):
+    first_name: str = Field(..., alias="firstName")
+    last_name: str = Field(..., alias="lastName")
+    username: str
+    email: EmailStr
+    password: str
+    referral_code: Optional[str] = Field(None, alias="referralCode")
+
+    class Config:
+        populate_by_name = True 
+
 
 
 class RegisterRequest(BaseModel):
@@ -39,10 +52,17 @@ class PasswordResetConfirmRequest(BaseModel):
 # -----------------------------
 
 class TokenResponse(BaseModel):
-    refresh: str
     access: str
+    refresh: str
 
 
 class TwoFARequiredResponse(BaseModel):
     two_factor_required: bool = True
     user_id: str
+
+
+class InitiateRegistrationResponse(BaseModel):
+    client_secret: str = Field(..., alias="clientSecret")
+
+    class Config:
+        populate_by_name = True
