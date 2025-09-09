@@ -13,7 +13,6 @@ async def get_referral_tree(user_id: str, db: AsyncSession = Depends(get_db)):
     Returns the referral tree for a given user as a nested structure with children.
     """
 
-    # Fetch the user's referral_code
     query = text("SELECT referral_code FROM users WHERE id = :id")
     result = await db.execute(query, {"id": user_id})
     row = result.fetchone()
@@ -22,7 +21,6 @@ async def get_referral_tree(user_id: str, db: AsyncSession = Depends(get_db)):
 
     referral_code = row.referral_code
 
-    # Recursive CTE to get all referrals
     tree_query = text("""
         WITH RECURSIVE referral_tree AS (
             SELECT id, username, email, referral_code, referred_by_code, 1 as level
@@ -48,12 +46,11 @@ async def get_referral_tree(user_id: str, db: AsyncSession = Depends(get_db)):
             "referral_code": r.referral_code,
             "referred_by_code": r.referred_by_code,
             "level": r.level,
-            "children": []  # initialize empty children list
+            "children": []  
         }
         for r in rows
     ]
 
-    # Build nested tree
     lookup = {r["referral_code"]: r for r in referrals}
     root_nodes = []
 
@@ -65,3 +62,4 @@ async def get_referral_tree(user_id: str, db: AsyncSession = Depends(get_db)):
             root_nodes.append(r)
 
     return root_nodes
+
