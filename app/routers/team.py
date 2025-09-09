@@ -10,7 +10,6 @@ router = APIRouter(
     tags=["Team"],
 )
 
-
 # -----------------------------
 # GET Referral Tree
 # -----------------------------
@@ -22,4 +21,4 @@ async def referral_tree(
     """
     Get the referral tree for the current authenticated user.
     """
-    return await get_referral_tree(current_user["sub"], db)
+    return await get_referral_tree(current_user["id"], db) 
