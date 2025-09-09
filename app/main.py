@@ -9,7 +9,8 @@ from app.routers import (
     withdrawals,
     admin,
     public,
-    team,   # 👈 NEW import
+    team,
+    dashboard,
 )
 
 app = FastAPI(
@@ -18,10 +19,18 @@ app = FastAPI(
     description="FastAPI backend with Supabase + Stripe",
 )
 
+app.router.redirect_slashes = False
+
+origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://optivlive.vercel.app",
+]
+
 # Allow frontend to call API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # TODO: restrict in production
+    allow_origins=origins, 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -34,8 +43,9 @@ app.include_router(kyc.router)
 app.include_router(transactions.router)
 app.include_router(withdrawals.router)
 app.include_router(admin.router)
+app.include_router(dashboard.router)
 app.include_router(public.router)
-app.include_router(team.router)  # 👈 NEW line
+app.include_router(team.router) 
 
 @app.get("/")
 async def root():
