@@ -1,22 +1,40 @@
-from fastapi import Depends, HTTPException
+from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
-from app.database import get_db
 from app.schemas.user_schemas import (
     ChangePasswordRequest, SetPinRequest, ChangePinRequest, VerifyPinRequest,
     UserUpdateRequest, UserProfileResponse
 )
 from app.utils.security import (
     hash_password, verify_password,
-    hash_pin, verify_pin as verify_pin_util  # 👈 rename to avoid collision
+    hash_pin, verify_pin as verify_pin_util  # 👈 renamed to avoid collision
 )
 
 
 # -----------------------------
 # PROFILE
 # -----------------------------
-async def get_profile(user: dict, db: AsyncSession = Depends(get_db)):
-    query = text("SELECT * FROM users WHERE id = :id LIMIT 1")
+async def get_profile(user: dict, db: AsyncSession):
+    query = text("""
+        SELECT 
+            id,
+            email,
+            username,
+            first_name,
+            last_name,
+            referral_code,
+            referred_by_code,
+            is_kyc_verified,
+            balance,
+            role,
+            status,
+            withdrawal_status,
+            is_2fa_enabled,
+            withdrawal_pin_hash
+        FROM users 
+        WHERE id = :id
+        LIMIT 1
+    """)
     result = await db.execute(query, {"id": user["id"]})
     record = result.fetchone()
     if not record:
@@ -29,10 +47,10 @@ async def get_profile(user: dict, db: AsyncSession = Depends(get_db)):
         first_name=record.first_name,
         last_name=record.last_name,
         referral_code=record.referral_code,
-        referred_by_code=record.referred_by_code,  # 👈 add this line
+        referred_by_code=record.referred_by_code,
         is_kyc_verified=record.is_kyc_verified,
         balance=str(record.balance),
-        has_pin=record.has_pin,
+        has_pin=bool(record.withdrawal_pin_hash),  # 👈 derive from DB
         is2fa_enabled=record.is_2fa_enabled,
         role=record.role,
         status=record.status,
@@ -40,8 +58,7 @@ async def get_profile(user: dict, db: AsyncSession = Depends(get_db)):
     )
 
 
-
-async def update_profile(user: dict, payload: UserUpdateRequest, db: AsyncSession = Depends(get_db)):
+async def update_profile(user: dict, payload: UserUpdateRequest, db: AsyncSession):
     query = text("""
         UPDATE users 
         SET first_name = :first_name, last_name = :last_name 
@@ -55,7 +72,7 @@ async def update_profile(user: dict, payload: UserUpdateRequest, db: AsyncSessio
 # -----------------------------
 # PASSWORD
 # -----------------------------
-async def change_password(user: dict, payload: ChangePasswordRequest, db: AsyncSession = Depends(get_db)):
+async def change_password(user: dict, payload: ChangePasswordRequest, db: AsyncSession):
     query = text("SELECT password_hash FROM users WHERE id = :id")
     result = await db.execute(query, {"id": user["id"]})
     record = result.fetchone()
@@ -75,7 +92,7 @@ async def change_password(user: dict, payload: ChangePasswordRequest, db: AsyncS
 # -----------------------------
 # PIN
 # -----------------------------
-async def set_pin(user: dict, payload: SetPinRequest, db: AsyncSession = Depends(get_db)):
+async def set_pin(user: dict, payload: SetPinRequest, db: AsyncSession):
     pin_hash = hash_pin(payload.pin)
     query = text("UPDATE users SET withdrawal_pin_hash = :ph, has_pin = true WHERE id = :id")
     await db.execute(query, {"id": user["id"], "ph": pin_hash})
@@ -83,7 +100,7 @@ async def set_pin(user: dict, payload: SetPinRequest, db: AsyncSession = Depends
     return {"message": "PIN set successfully"}
 
 
-async def change_pin(user: dict, payload: ChangePinRequest, db: AsyncSession = Depends(get_db)):
+async def change_pin(user: dict, payload: ChangePinRequest, db: AsyncSession):
     query = text("SELECT password_hash FROM users WHERE id = :id")
     result = await db.execute(query, {"id": user["id"]})
     record = result.fetchone()
@@ -97,8 +114,7 @@ async def change_pin(user: dict, payload: ChangePinRequest, db: AsyncSession = D
     return {"message": "PIN changed successfully"}
 
 
-async def verify_user_pin(user: dict, payload: VerifyPinRequest, db: AsyncSession = Depends(get_db)):
-    """ renamed from verify_pin to avoid collision with util """
+async def verify_user_pin(user: dict, payload: VerifyPinRequest, db: AsyncSession):
     query = text("SELECT withdrawal_pin_hash FROM users WHERE id = :id")
     result = await db.execute(query, {"id": user["id"]})
     record = result.fetchone()
