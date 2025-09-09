@@ -1,4 +1,3 @@
-# app/services/webhook_service.py
 from fastapi import HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
@@ -7,7 +6,7 @@ import stripe
 
 from app.utils.common import generate_referral_code
 from app.config import settings
-from app.services.transaction_service import distribute_signup_bonus  # ✅ NEW
+from app.services.transaction_service import distribute_signup_bonus 
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -20,7 +19,7 @@ async def handle_stripe_webhook(request: Request, db: AsyncSession):
         event = stripe.Webhook.construct_event(
             payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
         )
-    except stripe.error.SignatureVerificationError:  # type: ignore
+    except stripe.error.SignatureVerificationError: 
         raise HTTPException(status_code=400, detail="Invalid Stripe signature")
 
     if event["type"] != "payment_intent.succeeded":
@@ -34,9 +33,8 @@ async def handle_stripe_webhook(request: Request, db: AsyncSession):
     result = await db.execute(query, {"id": pending_id})
     pending = result.fetchone()
     if not pending:
-        return {"received": True}  # expired or already processed
+        return {"received": True}
 
-    # Create final user
     user_id = str(uuid4())
     referral_code = generate_referral_code()
 
@@ -65,7 +63,6 @@ async def handle_stripe_webhook(request: Request, db: AsyncSession):
         "referred_by_code": pending.referrer_code,
     })
 
-    # 🚀 Distribute referral bonuses (signup fee = £50)
     signup_fee = 50
     await distribute_signup_bonus(
         new_user_id=user_id,
@@ -74,10 +71,10 @@ async def handle_stripe_webhook(request: Request, db: AsyncSession):
         db=db
     )
 
-    # Delete from pending_registrations
     delete_pending = text("DELETE FROM pending_registrations WHERE id = :id")
     await db.execute(delete_pending, {"id": pending_id})
 
     await db.commit()
 
     return {"received": True}
+
