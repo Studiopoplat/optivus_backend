@@ -8,7 +8,7 @@ from typing import List, Optional
 from app.schemas.transaction_schemas import TransactionResponse
 from app.utils.stripe_client import create_payment_intent
 from app.utils.common import generate_transaction_ref
-from app.config import settings  # ✅ pull MASTER_REFERRAL_CODE from config
+from app.config import settings 
 
 
 # -----------------------------
@@ -173,8 +173,8 @@ async def distribute_signup_bonus(new_user_id: str, referrer_code: Optional[str]
     if not referrer_code:
         return
 
-    master_key = settings.MASTER_REFERRAL_CODE  # ✅ use config
-    percentages = [0.10, 0.085, 0.07225, 0.0614, 0.0522, 0.044]  # Fixed percentages per tier
+    master_key = settings.MASTER_REFERRAL_CODE 
+    percentages = [0.10, 0.085, 0.07225, 0.0614, 0.0522, 0.044]  
 
     total_distributed = 0.0
     current_code = referrer_code
@@ -189,17 +189,13 @@ async def distribute_signup_bonus(new_user_id: str, referrer_code: Optional[str]
         bonus_amount = round(signup_fee * pct, 2)
         total_distributed += bonus_amount
 
-        # Update referrer balance
         update_balance = text("UPDATE users SET balance = balance + :amt WHERE id = :uid")
         await db.execute(update_balance, {"amt": bonus_amount, "uid": referrer.id})
 
-        # Log referral bonus transaction
         await log_referral_bonus(referrer.id, new_user_id, str(bonus_amount), tier, db)
 
-        # Move to next level up
         current_code = referrer.referred_by_code
 
-    # Any leftover goes to MASTERKEY
     leftover = round(signup_fee - total_distributed, 2)
     if leftover > 0:
         result = await db.execute(
