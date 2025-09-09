@@ -10,10 +10,10 @@ from app.database import get_db
 # -----------------------------
 async def get_referral_tree(user_id: str, db: AsyncSession = Depends(get_db)):
     """
-    Returns the referral tree for a given user, including direct and recursive referrals.
+    Returns the referral tree for a given user as a nested structure with children.
     """
 
-    # First fetch the user's referral_code
+    # Fetch the user's referral_code
     query = text("SELECT referral_code FROM users WHERE id = :id")
     result = await db.execute(query, {"id": user_id})
     row = result.fetchone()
@@ -39,6 +39,7 @@ async def get_referral_tree(user_id: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(tree_query, {"referral_code": referral_code})
     rows = result.fetchall()
 
+    # Convert to dicts
     referrals = [
         {
             "id": str(r.id),
@@ -47,8 +48,20 @@ async def get_referral_tree(user_id: str, db: AsyncSession = Depends(get_db)):
             "referral_code": r.referral_code,
             "referred_by_code": r.referred_by_code,
             "level": r.level,
+            "children": []  # initialize empty children list
         }
         for r in rows
     ]
 
-    return {"referrals": referrals}
+    # Build nested tree
+    lookup = {r["referral_code"]: r for r in referrals}
+    root_nodes = []
+
+    for r in referrals:
+        parent_code = r["referred_by_code"]
+        if parent_code and parent_code in lookup:
+            lookup[parent_code]["children"].append(r)
+        else:
+            root_nodes.append(r)
+
+    return root_nodes
